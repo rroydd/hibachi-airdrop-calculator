@@ -837,10 +837,17 @@ ${numberWithCommas.format(userPoints)} points · calculated with ${publicShareUr
         </section>
 
         <footer className="rounded-2xl border border-orange-300/15 bg-black/30 p-5 text-center text-sm text-zinc-400">
-          Dashboard created by{" "}
-          <a className="font-semibold text-orange-200 underline decoration-orange-300/40 underline-offset-4 hover:text-white" href={CREATOR_LINK} target="_blank" rel="noreferrer">
-            @brelgino
-          </a>
+          <p>
+            Dashboard created by{" "}
+            <a className="font-semibold text-orange-200 underline decoration-orange-300/40 underline-offset-4 hover:text-white" href={CREATOR_LINK} target="_blank" rel="noreferrer">
+              @brelgino
+            </a>
+          </p>
+          <p className="mx-auto mt-3 max-w-4xl text-xs leading-5 text-zinc-500">
+            Disclaimer: this calculator is an independent speculative tool. It is not official Hibachi tokenomics,
+            financial advice, or a promise of an airdrop. All calculations, NFT bonuses, FDV, and token estimates are
+            hypothetical.
+          </p>
         </footer>
       </div>
     </main>
