@@ -366,7 +366,7 @@ Calculate yours: ${REFERRAL_LINK}`;
   const publicShareUrl = new URL(PUBLIC_SITE_URL);
   publicShareUrl.searchParams.set("amount", usd.format(finalAirdropUsd));
   publicShareUrl.searchParams.set("points", `${numberWithCommas.format(userPoints)} points`);
-  publicShareUrl.searchParams.set("tokens", `${compactNumber.format(finalTokens)} HEAT`);
+  publicShareUrl.searchParams.set("tokens", `${compactNumber.format(finalTokens)} $HEAT`);
   publicShareUrl.searchParams.set("nft", includeNftBonus ? nftCollection : "No NFT");
   const shareText = `My estimated @hibachi_xyz airdrop: ${usd.format(finalAirdropUsd)}
 
@@ -459,7 +459,7 @@ ${numberWithCommas.format(userPoints)} points · calculated with Hibachi Airdrop
       ctx.font = "700 30px Arial";
       ctx.fillText(`${numberWithCommas.format(userPoints)} points`, 132, 503);
       ctx.fillText(`${includeNftBonus ? nftCollection : "No NFT"}`, 432, 503);
-      ctx.fillText(`${compactNumber.format(finalTokens)} HEAT`, 705, 503);
+      ctx.fillText(`${compactNumber.format(finalTokens)} $HEAT`, 705, 503);
 
       ctx.fillStyle = "#fff7ed";
       ctx.font = "600 24px Arial";
