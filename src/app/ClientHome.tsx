@@ -480,7 +480,7 @@ ${numberWithCommas.format(userPoints)} points · calculated with ${publicShareUr
   }
 
   return (
-    <main className="min-h-screen overflow-hidden px-4 py-6 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen overflow-x-hidden px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="pointer-events-none fixed inset-0 -z-10">
         <div className="absolute left-1/2 top-0 h-56 w-[920px] -translate-x-1/2 rounded-full bg-orange-500/20 blur-3xl" />
         <div className="absolute bottom-10 right-0 h-80 w-80 rounded-full bg-red-600/15 blur-3xl" />
@@ -739,8 +739,8 @@ ${numberWithCommas.format(userPoints)} points · calculated with ${publicShareUr
             </div>
           </div>
 
-          <div className="flex flex-col gap-6">
-            <div className="relative overflow-hidden rounded-2xl border border-orange-300/25 bg-gradient-to-br from-zinc-950 via-red-950/35 to-orange-950/45 p-5 shadow-2xl shadow-red-950/40 sm:p-6">
+          <div className="flex min-w-0 flex-col gap-6">
+            <div className="relative rounded-2xl border border-orange-300/25 bg-gradient-to-br from-zinc-950 via-red-950/35 to-orange-950/45 p-5 shadow-2xl shadow-red-950/40 sm:p-6">
               <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-orange-400/15 to-transparent" />
               <p className="relative text-sm font-medium uppercase text-orange-200">Final Estimated Airdrop</p>
               <div className="relative mt-3 text-4xl font-semibold text-white sm:text-5xl">
