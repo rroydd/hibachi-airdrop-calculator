@@ -75,35 +75,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: siteName,
-    url: siteUrl,
-    description: siteDescription,
-    applicationCategory: "FinanceApplication",
-    operatingSystem: "Any",
-    creator: {
-      "@type": "Person",
-      name: "Brelgino",
-      url: "https://x.com/brelgino",
-    },
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-    },
-  };
-
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        {children}
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
