@@ -370,8 +370,8 @@ Calculate yours: ${REFERRAL_LINK}`;
   publicShareUrl.searchParams.set("nft", includeNftBonus ? nftCollection : "No NFT");
   const shareText = `My estimated @hibachi_xyz airdrop: ${usd.format(finalAirdropUsd)}
 
-${numberWithCommas.format(userPoints)} points · calculated with ${publicShareUrl.toString()}`;
-  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+${numberWithCommas.format(userPoints)} points · calculated with Hibachi Airdrop Calculator`;
+  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(publicShareUrl.toString())}`;
 
   function applyNftScenario(nextScenario: NftScenario) {
     setNftScenario(nextScenario);
