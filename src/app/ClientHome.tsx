@@ -8,6 +8,11 @@ import { compactNumber, numberWithCommas, percentage, preciseNumber, usd, usdCom
 const TOTAL_POINTS_MIN = 52_500_000;
 const TOTAL_POINTS_MAX = 70_000_000;
 const TOTAL_POINTS_STEP = 100_000;
+const MAX_USER_POINTS = 1_000_000_000;
+const MAX_FDV_MILLIONS = 100_000;
+const MAX_FARM_COST_USD = 100_000_000;
+const MAX_NFT_BONUS_PERCENT = 1_000;
+const MAX_NFT_FIXED_TOKENS = 100_000_000;
 const BASE_DISTRIBUTED_POINTS = 52_500_000;
 const WEEKLY_POINTS_DISTRIBUTION = 1_000_000;
 const BASE_DISTRIBUTION_UTC = "2026-05-18T00:00:00.000Z";
@@ -84,6 +89,14 @@ const NFT_FIXED_TOKEN_PRESETS: Record<Exclude<NftScenario, "Custom">, Record<Nft
 
 const DEFAULT_NFT_SCENARIO: Exclude<NftScenario, "Custom"> = "Base Case";
 
+function clampNumber(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+
+  return Math.min(max, Math.max(min, value));
+}
+
 function getDistributionState(now = new Date()) {
   const baseTime = new Date(BASE_DISTRIBUTION_UTC).getTime();
   const elapsedWeeks = Math.max(0, Math.floor((now.getTime() - baseTime) / WEEK_MS));
@@ -153,7 +166,7 @@ function NumericInput({ label, value, min = 0, max, step = 1, prefix, suffix, he
               onChange(0);
             }
           }}
-          onChange={(event) => onChange(parseNumber(event.target.value))}
+          onChange={(event) => onChange(clampNumber(parseNumber(event.target.value), min, max ?? Number.MAX_SAFE_INTEGER))}
           onFocus={() => setIsFocused(true)}
         />
         {suffix ? <span className="ml-2 whitespace-nowrap text-sm text-orange-200/60">{suffix}</span> : null}
@@ -179,7 +192,7 @@ function SliderField({ label, valueLabel, minLabel, maxLabel, value, min, max, s
         step={step}
         type="range"
         value={Math.min(max, Math.max(min, value))}
-        onChange={(event) => onChange(parseNumber(event.target.value))}
+        onChange={(event) => onChange(clampNumber(parseNumber(event.target.value), min, max))}
       />
       <div className="mt-2 flex items-center justify-between text-xs text-orange-100/55">
         <span>{minLabel}</span>
@@ -284,7 +297,11 @@ function ReferralCta({ compact = false }: { compact?: boolean }) {
 }
 
 export default function Home() {
-  const [distributionState, setDistributionState] = useState(() => getDistributionState());
+  const [distributionState, setDistributionState] = useState({
+    currentTotalPoints: BASE_DISTRIBUTED_POINTS,
+    nextDistribution: new Date(BASE_DISTRIBUTION_UTC),
+    countdown: "--",
+  });
   const [totalPoints, setTotalPoints] = useState(() => getDistributionState().currentTotalPoints);
   const [userPoints, setUserPoints] = useState(12_500);
   const [fdvMillions, setFdvMillions] = useState(100);
@@ -466,8 +483,22 @@ ${numberWithCommas.format(userPoints)} points · calculated with Hibachi Airdrop
       ctx.fillText("Calculate yours with 30% point boost and 5% fee discount", 105, 596);
 
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-      if (!blob || !navigator.clipboard || typeof ClipboardItem === "undefined") {
-        throw new Error("Clipboard image copy is not supported");
+      if (!blob) {
+        throw new Error("Image export is not supported");
+      }
+
+      if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = "hibachi-airdrop-estimate.png";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
+        setImageStatus("Image downloaded");
+        window.setTimeout(() => setImageStatus("Copy Image"), 1800);
+        return;
       }
 
       await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
@@ -570,8 +601,8 @@ ${numberWithCommas.format(userPoints)} points · calculated with Hibachi Airdrop
                 </div>
               </div>
 
-              <NumericInput label="Your Points" value={userPoints} min={0} step={100} onChange={setUserPoints} />
-              <NumericInput label="FDV" value={fdvMillions} min={0} step={1} suffix="Million USD" onChange={setFdvMillions} />
+              <NumericInput label="Your Points" value={userPoints} min={0} max={MAX_USER_POINTS} step={100} onChange={setUserPoints} />
+              <NumericInput label="FDV" value={fdvMillions} min={0} max={MAX_FDV_MILLIONS} step={1} suffix="Million USD" onChange={setFdvMillions} />
 
               <div>
                 <SliderField
@@ -608,7 +639,7 @@ ${numberWithCommas.format(userPoints)} points · calculated with Hibachi Airdrop
 
                 {farmCostEnabled ? (
                   <div className="mt-4 space-y-4">
-                    <NumericInput label="Cost" value={farmCostUsd} min={0} step={1} prefix="$" onChange={setFarmCostUsd} />
+                    <NumericInput label="Cost" value={farmCostUsd} min={0} max={MAX_FARM_COST_USD} step={1} prefix="$" onChange={setFarmCostUsd} />
                     <div className="grid grid-cols-2 gap-2 rounded-lg bg-black/35 p-1">
                       {(["subtract", "external"] as FarmCostMode[]).map((mode) => (
                         <button
@@ -711,6 +742,7 @@ ${numberWithCommas.format(userPoints)} points · calculated with Hibachi Airdrop
                         label="NFT Bonus Percentage"
                         value={selectedNftPercent}
                         min={0}
+                        max={MAX_NFT_BONUS_PERCENT}
                         step={0.5}
                         suffix="%"
                         helper={nftScenario === "Custom" ? "Custom" : nftScenario}
@@ -724,6 +756,7 @@ ${numberWithCommas.format(userPoints)} points · calculated with Hibachi Airdrop
                         label="Fixed NFT Token Amount"
                         value={selectedFixedNftTokens}
                         min={0}
+                        max={MAX_NFT_FIXED_TOKENS}
                         step={100}
                         suffix="HEAT"
                         helper={nftScenario === "Custom" ? "Custom" : nftScenario}
