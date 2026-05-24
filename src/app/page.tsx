@@ -109,5 +109,30 @@ export async function generateMetadata({
 }
 
 export default function Page() {
-  return <Home />;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: siteName,
+    url: siteUrl,
+    applicationCategory: "FinanceApplication",
+    operatingSystem: "Web",
+    description: siteDescription,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    creator: {
+      "@type": "Person",
+      name: "Brelgino",
+      url: "https://x.com/brelgino",
+    },
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <Home />
+    </>
+  );
 }
