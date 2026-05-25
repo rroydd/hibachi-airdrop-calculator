@@ -26,6 +26,8 @@ const CRYPTORANK_LINK = "https://cryptorank.io";
 const MODULARIUM_LINK = "https://modularium.art/profile/hibachi";
 const FLAME_NINJAS_OPENSEA_LINK = "https://opensea.io/collection/hibachi-flame-ninjas";
 const SHARE_BACKGROUND_COUNT = 48;
+const POLYMARKET_REFRESH_MS = 5 * 60 * 1000;
+const POLYMARKET_EVENT_LINK = "https://polymarket.com/event/will-hibachi-launch-a-token-by?r=join";
 
 const scenarioPresets = [
   { label: "Base", fdv: 100, allocation: 12.5 },
@@ -46,6 +48,47 @@ const nftBonusModes = ["+% to airdrop", "Fixed token amount"] as const;
 type NftCollection = (typeof nftCollections)[number];
 type NftScenario = (typeof nftScenarios)[number];
 type NftBonusMode = (typeof nftBonusModes)[number];
+type PolymarketMarket = {
+  id: string;
+  label: string;
+  yesProbabilityPercent: number | null;
+  status: "open" | "closed" | "unknown";
+};
+
+type PolymarketEvent = {
+  id: string;
+  title: string;
+  slug: string;
+  href: string;
+  volumeUsd: number | null;
+  endsAt: string | null;
+  status: "open" | "closed" | "unknown";
+  markets: PolymarketMarket[];
+};
+
+type PolymarketEventsResponse = {
+  events: PolymarketEvent[];
+  updatedAt: string;
+  source: "live" | "fallback";
+};
+
+const fallbackPolymarketEvent: PolymarketEvent = {
+  id: "will-hibachi-launch-a-token-by",
+  title: "Will Hibachi launch a token by ___?",
+  slug: "will-hibachi-launch-a-token-by",
+  href: POLYMARKET_EVENT_LINK,
+  volumeUsd: null,
+  endsAt: null,
+  status: "unknown",
+  markets: [
+    {
+      id: "will-hibachi-launch-a-token-by-december-31-2026",
+      label: "December 31, 2026",
+      yesProbabilityPercent: null,
+      status: "unknown",
+    },
+  ],
+};
 
 const NFT_PERCENT_PRESETS: Record<Exclude<NftScenario, "Custom">, Record<NftCollection, number>> = {
   Conservative: {
@@ -298,6 +341,133 @@ function ReferralCta({ compact = false }: { compact?: boolean }) {
           Create your account
         </a>
       </div>
+    </section>
+  );
+}
+
+function PolymarketEventsPanel() {
+  const [events, setEvents] = useState<PolymarketEvent[]>([fallbackPolymarketEvent]);
+  const [feedStatus, setFeedStatus] = useState<"loading" | "live" | "fallback">("loading");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(true);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function updateEvents() {
+      try {
+        const response = await fetch("/api/polymarket-events", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error("Unable to load Polymarket events");
+        }
+
+        const data = (await response.json()) as PolymarketEventsResponse;
+        if (isCancelled) {
+          return;
+        }
+
+        setEvents(data.events.length > 0 ? data.events : [fallbackPolymarketEvent]);
+        setLastUpdatedAt(data.updatedAt);
+        setFeedStatus(data.source);
+      } catch {
+        if (!isCancelled) {
+          setFeedStatus("fallback");
+        }
+      }
+    }
+
+    void updateEvents();
+    const interval = window.setInterval(() => void updateEvents(), POLYMARKET_REFRESH_MS);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const updateText =
+    feedStatus === "live" && lastUpdatedAt
+      ? `Live API - updated ${new Date(lastUpdatedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`
+      : feedStatus === "loading"
+        ? "Connecting to Polymarket..."
+        : "Open market link available";
+  const oddsFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
+
+  return (
+    <section className="rounded-2xl border border-orange-300/20 bg-zinc-950/65 lg:col-span-2">
+      <div className="flex items-center justify-between gap-4 p-5">
+        <div>
+          <p className="text-xs font-semibold uppercase text-orange-200">Polymarket</p>
+          <h3 className="mt-2 text-lg font-semibold text-white">Hibachi events</h3>
+          <p className="mt-1 text-xs text-zinc-400">{updateText}</p>
+        </div>
+        <button
+          className={`h-8 w-14 shrink-0 rounded-full p-1 transition ${isOpen ? "bg-orange-400" : "bg-zinc-700"}`}
+          type="button"
+          aria-label="Toggle Polymarket events"
+          aria-pressed={isOpen}
+          onClick={() => setIsOpen((open) => !open)}
+        >
+          <span
+            className={`block h-6 w-6 rounded-full bg-zinc-950 transition ${isOpen ? "translate-x-6" : "translate-x-0"}`}
+          />
+        </button>
+      </div>
+
+      {isOpen ? (
+        <div className="border-t border-orange-200/10 p-5 pt-4">
+          <div className="grid gap-3">
+            {events.map((event) => (
+              <a
+                className="rounded-xl border border-orange-300/15 bg-white/[0.04] p-4 transition hover:border-orange-300/50 hover:bg-orange-500/10"
+                href={event.href}
+                key={event.id}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="rounded-full border border-orange-300/25 bg-orange-500/10 px-2.5 py-1 text-xs font-semibold uppercase text-orange-100">
+                    {event.status === "open" ? "Open" : event.status === "closed" ? "Closed" : "Market"}
+                  </span>
+                  <span className="text-xs font-medium text-orange-200">Open on Polymarket &gt;</span>
+                </div>
+                <p className="mt-3 text-base font-semibold text-white">{event.title}</p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {event.markets.map((market) => (
+                    <div
+                      className="flex items-center justify-between gap-3 rounded-lg border border-orange-200/10 bg-black/25 px-3 py-2.5"
+                      key={market.id}
+                    >
+                      <span className="text-xs font-medium text-zinc-300">{market.label}</span>
+                      <span className="whitespace-nowrap text-sm font-semibold text-orange-100">
+                        {market.yesProbabilityPercent === null
+                          ? "Live odds unavailable"
+                          : `${oddsFormatter.format(market.yesProbabilityPercent)}% Yes`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400">
+                  {event.volumeUsd === null ? null : <span>Volume: {usdCompact.format(event.volumeUsd)}</span>}
+                  {event.endsAt ? (
+                    <span>
+                      Ends:{" "}
+                      {new Date(event.endsAt).toLocaleDateString("en-US", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  ) : null}
+                </div>
+              </a>
+            ))}
+          </div>
+          <p className="mt-4 text-xs leading-5 text-zinc-500">
+            Related Hibachi events are checked automatically every 5 minutes while this page is open.
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -807,20 +977,7 @@ ${numberWithCommas.format(userPoints)} points · calculated with Hibachi Airdrop
         {!includeNftBonus ? <ReferralCta /> : null}
 
         <section className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-orange-300/15 bg-zinc-950/65 p-5">
-            <p className="text-xs font-semibold uppercase text-orange-200">Farmer lens</p>
-            <h3 className="mt-3 text-lg font-semibold text-white">Track EV before you add size</h3>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">
-              Watch point value, ROI, and break-even points before scaling volume.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-orange-300/15 bg-zinc-950/65 p-5">
-            <p className="text-xs font-semibold uppercase text-orange-200">Project intel</p>
-            <h3 className="mt-3 text-lg font-semibold text-white">News and funding block</h3>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">
-              Weekly points, active quests, and market updates belong here once an API feed is connected.
-            </p>
-          </div>
+          <PolymarketEventsPanel />
           <div className="rounded-2xl border border-orange-300/15 bg-zinc-950/65 p-5">
             <p className="text-xs font-semibold uppercase text-orange-200">Fast links</p>
             <div className="mt-4 grid gap-2">
